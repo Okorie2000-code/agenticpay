@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, ExternalLink, CheckCircle2, Clock, Circle, Loader2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, CheckCircle2, Clock, Circle, Loader2, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ProjectDetailSkeleton } from '@/components/ui/loading-skeletons';
@@ -22,6 +22,7 @@ import { ConfirmModal } from '@/components/transaction/ConfirmModal';
 import { MarkdownContent } from '@/components/markdown/MarkdownContent';
 import { CopyButton } from '@/components/ui/copy-button';
 import { parseEther } from 'viem';
+import { generateICS, downloadICS } from '@/lib/generateICS';
 
 type PendingTransaction = {
   functionName: string;
@@ -113,6 +114,24 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleAddToCalendar = () => {
+    const events = project.milestones
+      .filter((m) => m.dueDate)
+      .map((m) => ({
+        uid: `milestone-${m.id}@agenticpay`,
+        summary: `${project.title} — ${m.title}`,
+        description: m.description ?? undefined,
+        start: new Date(m.dueDate!),
+      }));
+
+    if (events.length === 0) {
+      toast.info('No milestone due dates to export.');
+      return;
+    }
+
+    downloadICS(`${project.title.replace(/\s+/g, '-')}.ics`, generateICS(events));
+  };
+
   return (
     <div className="space-y-6">
       <PageBreadcrumb
@@ -199,6 +218,10 @@ export default function ProjectDetailPage() {
 
           {/* Action Buttons */}
           <div className="pt-4 border-t mt-4 flex gap-4 flex-wrap">
+            <Button variant="outline" onClick={handleAddToCalendar}>
+              <CalendarDays className="h-4 w-4 mr-2" />
+              Add to Calendar
+            </Button>
             {/* Client Actions */}
             {isClient && (
               <>
